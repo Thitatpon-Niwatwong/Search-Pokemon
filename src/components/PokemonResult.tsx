@@ -1,5 +1,28 @@
 import { gql, useQuery } from '@apollo/client';
 import { useRouter } from 'next/router';
+import Image from 'next/image';
+
+type Attack = {
+  name: string;
+  type: string;
+  damage: number;
+};
+
+type Evolution = {
+  name: string;
+};
+
+type Pokemon = {
+  id: string;
+  name: string;
+  image: string;
+  types: string[];
+  attacks: {
+    fast: Attack[];
+    special: Attack[];
+  };
+  evolutions?: Evolution[];
+};
 
 const GET_POKEMON = gql`
   query getPokemon($name: String!) {
@@ -31,7 +54,7 @@ export const PokemonResult = () => {
   const { query, push } = useRouter();
   const name = query.name as string;
 
-  const { data, loading, error } = useQuery(GET_POKEMON, {
+  const { data, loading, error } = useQuery<{ pokemon: Pokemon }>(GET_POKEMON, {
     variables: { name },
     skip: !name,
   });
@@ -45,12 +68,17 @@ export const PokemonResult = () => {
   return (
     <div style={{ border: '1px solid #ddd', padding: '1rem', borderRadius: '8px' }}>
       <h2>{pokemon.name}</h2>
-      <img src={pokemon.image} alt={pokemon.name} width={150} />
+      <Image
+        src={pokemon.image}
+        alt={pokemon.name}
+        width={150}
+        height={150}
+      />
       <p>Types: {pokemon.types.join(', ')}</p>
 
       <h3>Fast Attacks</h3>
       <ul>
-        {pokemon.attacks.fast.map((atk: any) => (
+        {pokemon.attacks.fast.map((atk: Attack) => (
           <li key={atk.name}>
             {atk.name} ({atk.type}) - {atk.damage}
           </li>
@@ -59,22 +87,25 @@ export const PokemonResult = () => {
 
       <h3>Special Attacks</h3>
       <ul>
-        {pokemon.attacks.special.map((atk: any) => (
+        {pokemon.attacks.special.map((atk: Attack) => (
           <li key={atk.name}>
             {atk.name} ({atk.type}) - {atk.damage}
           </li>
         ))}
       </ul>
 
-      {pokemon.evolutions?.length > 0 && (
+      {pokemon.evolutions?.length ? (
         <>
           <h3>Evolutions</h3>
           <ul>
-            {pokemon.evolutions.map((evo: any) => (
+            {pokemon.evolutions.map((evo: Evolution) => (
               <li key={evo.name}>
                 <a
                   href="#"
-                  onClick={() => push(`/?name=${evo.name.toLowerCase()}`)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    push(`/?name=${evo.name.toLowerCase()}`);
+                  }}
                   style={{ color: 'blue', cursor: 'pointer' }}
                 >
                   {evo.name}
@@ -83,7 +114,7 @@ export const PokemonResult = () => {
             ))}
           </ul>
         </>
-      )}
+      ) : null}
     </div>
   );
 };
